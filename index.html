@@ -454,7 +454,13 @@ function saveReview(){
 }
 
 function getReviewLabel(d,isWeek){
-  if(isWeek){const s=new Date(d);s.setDate(d.getDate()-d.getDay()+1);return'Week of '+s.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+  if(isWeek){
+    const day=d.getDay();
+    const daysFromMon=day===0?6:day-1;
+    const s=new Date(d);
+    s.setDate(d.getDate()-daysFromMon-7);
+    return'Week of '+s.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+  }
   return d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
 }
 
