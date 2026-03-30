@@ -1,0 +1,24 @@
+{
+  "name": "My Diary",
+  "short_name": "Diary",
+  "description": "Personal diary with photo & handwriting recognition",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#3d2b1a",
+  "theme_color": "#3d2b1a",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

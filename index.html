@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3d2b1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="My Diary">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-512.png">
+<title>My Diary</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Nunito:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #faf6f0;
+  --ink: #2c1f0e;
+  --ink-light: #5c4a35;
+  --ink-muted: #9a8472;
+  --accent: #8b4513;
+  --accent-light: #c47a3a;
+  --line: #e2d5c3;
+  --sidebar: #3d2b1a;
+  --sidebar-text: #f0e6d6;
+  --sidebar-muted: #8a6a4a;
+  --shadow: rgba(44,31,14,0.13);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Nunito', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overscroll-behavior: none;
+}
+#app-header {
+  background: var(--sidebar);
+  padding: calc(var(--safe-top) + 14px) 20px 14px;
+  display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 50;
+}
+.header-title { font-family: 'Lora', serif; font-size: 19px; font-weight: 600; color: var(--sidebar-text); }
+.header-date { font-size: 11px; color: var(--sidebar-muted); }
+#main-content {
+  flex: 1; overflow-y: auto;
+  padding: 24px 18px calc(80px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+.section { display: none; }
+.section.active { display: block; }
+#bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: var(--sidebar); display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 100; border-top: 1px solid rgba(255,255,255,0.06);
+}
+.bnav-item {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 0 8px; color: var(--sidebar-muted);
+  cursor: pointer; gap: 3px; font-size: 10px;
+  font-weight: 600; letter-spacing: 0.5px;
+  text-transform: uppercase; user-select: none; transition: color 0.15s;
+}
+.bnav-item.active { color: var(--accent-light); }
+.bnav-icon { font-size: 20px; line-height: 1; }
+.date-row { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.field-label { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.7px; font-weight: 600; margin-bottom: 8px; }
+input[type="date"] {
+  font-family: 'Lora', serif; font-size: 15px; border: none;
+  background: none; color: var(--ink);
+  border-bottom: 1.5px solid var(--line); padding: 3px 0; outline: none; cursor: pointer;
+}
+input[type="date"]:focus { border-bottom-color: var(--accent); }
+.photo-slots { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.photo-slot {
+  position: relative; border: 1.5px dashed var(--line);
+  border-radius: 12px; overflow: hidden;
+  background: rgba(255,255,255,0.5); cursor: pointer;
+  transition: border-color 0.2s; aspect-ratio: 3/4;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+.photo-slot:active { border-color: var(--accent-light); }
+.photo-slot input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  width: 100%; height: 100%; z-index: 2;
+}
+.slot-icon { font-size: 26px; margin-bottom: 6px; }
+.slot-label { font-size: 11px; color: var(--ink-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px; line-height: 1.4; padding: 0 8px; }
+.slot-preview { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 1; border-radius: 10px; }
+.slot-remove {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(44,31,14,0.72); color: #fff;
+  border: none; border-radius: 50%; width: 26px; height: 26px;
+  font-size: 13px; cursor: pointer; z-index: 3;
+  display: flex; align-items: center; justify-content: center;
+}
+textarea {
+  width: 100%; min-height: 160px;
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 14px; font-family: 'Lora', serif;
+  font-size: 15px; line-height: 1.85; color: var(--ink);
+  background: rgba(255,255,255,0.7); resize: vertical;
+  outline: none; transition: border-color 0.15s; margin-bottom: 16px;
+  -webkit-appearance: none;
+}
+textarea:focus { border-color: var(--accent-light); }
+textarea::placeholder { color: var(--ink-muted); font-style: italic; }
+.mood-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 22px; }
+.mood-chip {
+  padding: 7px 14px; border-radius: 20px; font-size: 13px;
+  border: 1px solid var(--line); background: rgba(255,255,255,0.6);
+  color: var(--ink-light); cursor: pointer;
+  font-family: 'Nunito', sans-serif; font-weight: 500;
+  transition: all 0.15s; -webkit-appearance: none;
+}
+.mood-chip.selected { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary {
+  width: 100%; background: var(--sidebar); color: var(--sidebar-text);
+  border: none; border-radius: 10px; padding: 14px;
+  font-family: 'Nunito', sans-serif; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: background 0.15s; -webkit-appearance: none;
+}
+.btn-primary:active { background: var(--accent); }
+.search-bar {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.65); border: 1px solid var(--line);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
+}
+.search-bar input {
+  flex: 1; border: none; background: none;
+  font-family: 'Nunito', sans-serif; font-size: 14px;
+  color: var(--ink); outline: none;
+}
+.search-bar input::placeholder { color: var(--ink-muted); }
+.entry-card {
+  background: rgba(255,255,255,0.65); border: 1px solid var(--line);
+  border-radius: 12px; margin-bottom: 12px; cursor: pointer;
+  overflow: hidden; display: flex; align-items: stretch;
+}
+.entry-card:active { box-shadow: 0 4px 14px var(--shadow); }
+.entry-stripe { width: 4px; min-width: 4px; background: var(--accent-light); border-radius: 12px 0 0 12px; }
+.entry-body { flex: 1; padding: 13px 12px; min-width: 0; }
+.entry-card-date { font-family: 'Lora', serif; font-size: 12px; color: var(--ink-muted); margin-bottom: 4px; }
+.entry-card-preview { font-size: 13px; color: var(--ink-light); line-height: 1.5; }
+.entry-thumb { width: 64px; min-width: 64px; background-size: cover; background-position: center; border-radius: 0 10px 10px 0; }
+.back-btn { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; color: var(--accent); cursor: pointer; margin-bottom: 18px; font-weight: 600; }
+.detail-date { font-family: 'Lora', serif; font-size: 21px; font-weight: 500; margin-bottom: 4px; }
+.detail-mood { font-size: 13px; color: var(--ink-muted); margin-bottom: 18px; }
+.detail-photos { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.detail-photo { aspect-ratio: 3/4; background-size: cover; background-position: center; border-radius: 10px; border: 1px solid var(--line); }
+.detail-body { font-family: 'Lora', serif; font-size: 15px; line-height: 1.9; color: var(--ink); white-space: pre-wrap; }
+.review-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.rtab {
+  flex: 1; padding: 9px 0; border: 1px solid var(--line); border-radius: 20px;
+  font-size: 13px; font-family: 'Nunito', sans-serif; font-weight: 500;
+  background: none; color: var(--ink-light); cursor: pointer; text-align: center;
+  transition: all 0.15s; -webkit-appearance: none;
+}
+.rtab.active { background: var(--sidebar); color: var(--sidebar-text); border-color: var(--sidebar); }
+.review-block { background: rgba(255,255,255,0.65); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.review-block label { display: block; font-size: 11px; color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; margin-bottom: 8px; }
+.review-block textarea { min-height: 80px; margin-bottom: 0; }
+.review-block textarea.big { min-height: 110px; }
+.stars-row { display: flex; gap: 6px; }
+.star-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: var(--line); transition: color 0.1s; padding: 2px; -webkit-appearance: none; }
+.star-btn.lit { color: var(--accent-light); }
+.review-list-item { background: rgba(255,255,255,0.6); border: 1px solid var(--line); border-radius: 10px; padding: 13px 14px; margin-bottom: 10px; cursor: pointer; }
+.rli-top { display: flex; justify-content: space-between; margin-bottom: 3px; }
+.rli-label { font-family: 'Lora', serif; font-size: 14px; font-weight: 500; color: var(--ink); }
+.rli-stars { font-size: 12px; color: var(--accent-light); letter-spacing: 1px; }
+.rli-preview { font-size: 12px; color: var(--ink-muted); }
+.empty-state { text-align: center; padding: 50px 20px; color: var(--ink-muted); }
+.empty-icon { font-size: 40px; margin-bottom: 12px; }
+.empty-state p { font-size: 14px; line-height: 1.7; }
+#toast {
+  position: fixed;
+  bottom: calc(72px + var(--safe-bottom) + 12px);
+  left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--sidebar); color: var(--sidebar-text);
+  padding: 10px 22px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  opacity: 0; transition: all 0.25s ease; z-index: 200;
+  pointer-events: none; white-space: nowrap; box-shadow: 0 4px 16px var(--shadow);
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<div id="app-header">
+  <span class="header-title">My Diary</span>
+  <span class="header-date" id="header-date"></span>
+</div>
+
+<div id="main-content">
+
+  <!-- NEW ENTRY -->
+  <div id="sec-new" class="section active">
+    <div class="date-row">
+      <span class="field-label" style="margin-bottom:0">Date</span>
+      <input type="date" id="entry-date">
+    </div>
+
+    <div class="photo-slots">
+      <div class="photo-slot" id="slot-selfie">
+        <input type="file" accept="image/*" capture="user" id="file-selfie">
+        <div id="selfie-content">
+          <div class="slot-icon">🤳</div>
+          <div class="slot-label">Selfie / Highlight</div>
+        </div>
+      </div>
+      <div class="photo-slot" id="slot-page">
+        <input type="file" accept="image/*" capture="environment" id="file-page">
+        <div id="page-content">
+          <div class="slot-icon">📷</div>
+          <div class="slot-label">Photo of the Day</div>
+        </div>
+      </div>
+    </div>
+
+    <textarea id="entry-text" placeholder="Write about your day..." rows="7"></textarea>
+
+    <div class="field-label">Mood</div>
+    <div class="mood-chips">
+      <button class="mood-chip" data-mood="😊 Good">😊 Good</button>
+      <button class="mood-chip" data-mood="🔥 Great">🔥 Great</button>
+      <button class="mood-chip" data-mood="😐 Okay">😐 Okay</button>
+      <button class="mood-chip" data-mood="😔 Low">😔 Low</button>
+      <button class="mood-chip" data-mood="😰 Anxious">😰 Anxious</button>
+    </div>
+
+    <button class="btn-primary" id="btn-save-entry">Save Entry</button>
+  </div>
+
+  <!-- ENTRIES -->
+  <div id="sec-entries" class="section">
+    <div class="search-bar">
+      <span style="color:var(--ink-muted)">🔍</span>
+      <input type="text" id="search-input" placeholder="Search entries...">
+    </div>
+    <div id="entries-list"></div>
+    <div id="entry-detail" style="display:none"></div>
+  </div>
+
+  <!-- REVIEWS -->
+  <div id="sec-reviews" class="section">
+    <div class="review-tabs">
+      <button class="rtab active" id="rtab-week">Weekly</button>
+      <button class="rtab" id="rtab-month">Monthly</button>
+      <button class="rtab" id="rtab-past">Past</button>
+    </div>
+    <div id="review-form"></div>
+    <div id="review-past"></div>
+  </div>
+
+</div>
+
+<div id="bottom-nav">
+  <div class="bnav-item active" data-sec="new"><span class="bnav-icon">✏️</span><span>New</span></div>
+  <div class="bnav-item" data-sec="entries"><span class="bnav-icon">📖</span><span>Entries</span></div>
+  <div class="bnav-item" data-sec="reviews"><span class="bnav-icon">📊</span><span>Reviews</span></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SK = { entries:'diary_entries', reviews:'diary_reviews' };
+const getData = k => { try { return JSON.parse(localStorage.getItem(k))||[]; } catch { return []; } };
+const setData = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+
+let selfieB64=null, pageB64=null, selectedMood='', reviewTab='week', reviewStars=0;
+
+const todayStr = () => new Date().toISOString().split('T')[0];
+document.getElementById('entry-date').value = todayStr();
+document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const fmtDate = s => new Date(s+'T12:00:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+
+const showToast = msg => {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2400);
+};
+
+// Nav
+document.querySelectorAll('.bnav-item').forEach(item=>{
+  item.addEventListener('click',()=>{
+    const sec=item.getAttribute('data-sec');
+    document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('active'));
+    item.classList.add('active');
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('sec-'+sec).classList.add('active');
+    if(sec==='entries') renderEntriesList();
+    if(sec==='reviews') renderReviews();
+  });
+});
+
+// Photo slots
+function setupSlot(fileId, slotId, contentId, isFirst) {
+  document.getElementById(fileId).addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      if(isFirst) selfieB64=ev.target.result; else pageB64=ev.target.result;
+      const slot=document.getElementById(slotId);
+      document.getElementById(contentId).style.display='none';
+      slot.querySelector('.slot-preview')?.remove();
+      slot.querySelector('.slot-remove')?.remove();
+      const prev=document.createElement('div');
+      prev.className='slot-preview';
+      prev.style.backgroundImage=`url(${ev.target.result})`;
+      const rm=document.createElement('button');
+      rm.className='slot-remove'; rm.textContent='✕';
+      rm.onclick=e2=>{
+        e2.stopPropagation();
+        if(isFirst) selfieB64=null; else pageB64=null;
+        prev.remove(); rm.remove();
+        document.getElementById(contentId).style.display='';
+        document.getElementById(fileId).value='';
+      };
+      slot.appendChild(prev); slot.appendChild(rm);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+setupSlot('file-selfie','slot-selfie','selfie-content',true);
+setupSlot('file-page','slot-page','page-content',false);
+
+// Mood
+document.querySelectorAll('.mood-chip').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mood-chip').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected');
+    selectedMood=btn.getAttribute('data-mood');
+  });
+});
+
+// Save entry
+document.getElementById('btn-save-entry').addEventListener('click',()=>{
+  const text=document.getElementById('entry-text').value.trim();
+  const date=document.getElementById('entry-date').value;
+  if(!date){showToast('Pick a date first.');return;}
+  if(!text&&!selfieB64&&!pageB64){showToast('Add a photo or write something.');return;}
+  const entries=getData(SK.entries);
+  entries.unshift({id:Date.now(),date,text,mood:selectedMood,selfie:selfieB64,page:pageB64});
+  setData(SK.entries,entries);
+  document.getElementById('entry-text').value='';
+  document.getElementById('entry-date').value=todayStr();
+  document.querySelectorAll('.mood-chip').forEach(b=>b.classList.remove('selected'));
+  ['selfie','page'].forEach(w=>{
+    document.getElementById('slot-'+w).querySelector('.slot-preview')?.remove();
+    document.getElementById('slot-'+w).querySelector('.slot-remove')?.remove();
+    document.getElementById(w+'-content').style.display='';
+    document.getElementById('file-'+w).value='';
+  });
+  selfieB64=null; pageB64=null; selectedMood='';
+  showToast('Entry saved ✓');
+});
+
+// Entries
+function renderEntriesList(query){
+  const list=document.getElementById('entries-list');
+  const detail=document.getElementById('entry-detail');
+  detail.style.display='none'; list.style.display='block';
+  let entries=getData(SK.entries);
+  if(query) entries=entries.filter(e=>(e.text||'').toLowerCase().includes(query.toLowerCase()));
+  if(!entries.length){
+    list.innerHTML=`<div class="empty-state"><div class="empty-icon">📓</div><p>No entries yet.<br>Start writing your first entry.</p></div>`;
+    return;
+  }
+  list.innerHTML=entries.map(e=>`
+    <div class="entry-card" onclick="showEntry(${e.id})">
+      <div class="entry-stripe"></div>
+      <div class="entry-body">
+        <div class="entry-card-date">${fmtDate(e.date)}${e.mood?' · '+e.mood:''}</div>
+        <div class="entry-card-preview">${(e.text||'Photo entry').substring(0,110)}${(e.text||'').length>110?'...':''}</div>
+      </div>
+      ${(e.selfie||e.page)?`<div class="entry-thumb" style="background-image:url(${e.selfie||e.page})"></div>`:''}
+    </div>
+  `).join('');
+}
+
+function showEntry(id){
+  const e=getData(SK.entries).find(x=>x.id===id); if(!e) return;
+  document.getElementById('entries-list').style.display='none';
+  const detail=document.getElementById('entry-detail');
+  detail.style.display='block';
+  const photos=[
+    e.selfie?`<div class="detail-photo" style="background-image:url(${e.selfie})"></div>`:'',
+    e.page?`<div class="detail-photo" style="background-image:url(${e.page})"></div>`:''
+  ].filter(Boolean).join('');
+  detail.innerHTML=`
+    <span class="back-btn" onclick="renderEntriesList()">← Back</span>
+    <div class="detail-date">${fmtDate(e.date)}</div>
+    ${e.mood?`<div class="detail-mood">${e.mood}</div>`:''}
+    ${photos?`<div class="detail-photos">${photos}</div>`:''}
+    ${e.text?`<div class="detail-body">${e.text}</div>`:''}
+  `;
+}
+
+document.getElementById('search-input').addEventListener('input',e=>renderEntriesList(e.target.value));
+
+// Reviews
+['week','month','past'].forEach(tab=>{
+  document.getElementById('rtab-'+tab).addEventListener('click',()=>{
+    reviewTab=tab;
+    document.querySelectorAll('.rtab').forEach(b=>b.classList.remove('active'));
+    document.getElementById('rtab-'+tab).classList.add('active');
+    renderReviews();
+  });
+});
+
+function renderReviews(){
+  const form=document.getElementById('review-form');
+  const past=document.getElementById('review-past');
+  reviewStars=0;
+  if(reviewTab==='past'){form.innerHTML='';renderPastReviews();return;}
+  past.innerHTML='';
+  const isWeek=reviewTab==='week';
+  const fields=isWeek
+    ?[{key:'highlight',label:'Highlight of the week',big:true},{key:'learned',label:'What I learned'},{key:'improve',label:'What to improve'},{key:'intention',label:'Intention for next week'}]
+    :[{key:'theme',label:'Main theme of the month',big:true},{key:'proud',label:'What I am proud of'},{key:'goals',label:'Progress on goals'},{key:'next',label:'Focus for next month'}];
+  form.innerHTML=`
+    ${fields.map(f=>`<div class="review-block"><label>${f.label}</label><textarea id="rv-${f.key}" class="${f.big?'big':''}"></textarea></div>`).join('')}
+    <div class="review-block">
+      <label>${isWeek?'Week rating':'Month rating'}</label>
+      <div class="stars-row">${[1,2,3,4,5].map(n=>`<button class="star-btn" data-star="${n}" onclick="setStars(${n})">★</button>`).join('')}</div>
+    </div>
+    <button class="btn-primary" onclick="saveReview()">Save Review</button>
+  `;
+}
+
+function setStars(n){
+  reviewStars=n;
+  document.querySelectorAll('.star-btn').forEach(b=>b.classList.toggle('lit',parseInt(b.getAttribute('data-star'))<=n));
+}
+
+function saveReview(){
+  const isWeek=reviewTab==='week';
+  const keys=isWeek?['highlight','learned','improve','intention']:['theme','proud','goals','next'];
+  const data={};
+  keys.forEach(k=>{data[k]=(document.getElementById('rv-'+k)?.value||'').trim();});
+  if(!Object.values(data).some(v=>v)){showToast('Fill in at least one field.');return;}
+  const reviews=getData(SK.reviews);
+  const now=new Date();
+  reviews.unshift({id:Date.now(),type:reviewTab,date:now.toISOString(),label:getReviewLabel(now,isWeek),rating:reviewStars,data});
+  setData(SK.reviews,reviews);
+  renderReviews();
+  showToast('Review saved ✓');
+}
+
+function getReviewLabel(d,isWeek){
+  if(isWeek){const s=new Date(d);s.setDate(d.getDate()-d.getDay()+1);return'Week of '+s.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});}
+  return d.toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+}
+
+function renderPastReviews(){
+  const past=document.getElementById('review-past');
+  const reviews=getData(SK.reviews);
+  if(!reviews.length){past.innerHTML=`<div class="empty-state"><div class="empty-icon">📊</div><p>No reviews yet.</p></div>`;return;}
+  past.innerHTML=reviews.map(r=>`
+    <div class="review-list-item" onclick="showReviewDetail(${r.id})">
+      <div class="rli-top"><span class="rli-label">${r.label}</span><span class="rli-stars">${r.rating?'★'.repeat(r.rating):''}</span></div>
+      <div class="rli-preview">${Object.values(r.data).find(v=>v)?.substring(0,90)||''}...</div>
+    </div>
+  `).join('');
+}
+
+function showReviewDetail(id){
+  const r=getData(SK.reviews).find(x=>x.id===id); if(!r) return;
+  const labels=r.type==='week'
+    ?{highlight:'Highlight',learned:'What I learned',improve:'What to improve',intention:'Intention for next week'}
+    :{theme:'Main theme',proud:'What I am proud of',goals:'Progress on goals',next:'Focus for next month'};
+  document.getElementById('review-past').innerHTML=`
+    <span class="back-btn" onclick="renderPastReviews()">← Back</span>
+    <div class="detail-date" style="margin-bottom:16px">${r.label} ${r.rating?'<span style="color:var(--accent-light);font-size:18px;">'+'★'.repeat(r.rating)+'</span>':''}</div>
+    ${Object.entries(r.data).filter(([k,v])=>v).map(([k,v])=>`<div class="review-block"><label>${labels[k]||k}</label><div class="detail-body" style="font-size:14px">${v}</div></div>`).join('')}
+  `;
+}
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body>
+</html>
